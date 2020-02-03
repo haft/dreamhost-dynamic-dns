@@ -16,11 +16,17 @@ function usage {
 }
 
 function createConfigurationFile {
-
-	if [ ! -d $HOME/.config ]; then
-		echo "$HOME/.config/ does not exist, creating directory."
-		mkdir $HOME/.config
+#
+#	if [ ! -d $HOME/.config ]; then
+#		echo "$HOME/.config/ does not exist, creating directory."
+#		mkdir $HOME/.config
+#	fi
+# EdgeOS 
+	if [ ! -d /config/user-data/scripts/.config ]; then
+		echo "/config/user-data/scripts/.config/ does not exist, creating directory."
+		mkdir /config/user-data/scripts/.config
 	fi
+
 
 echo '# Dreamhost Dynamic DNS Updater Configuration file.  This file
 # allows you to set the basic parameters to update Dreamhost
@@ -51,7 +57,8 @@ RECORD=
 
 LOGGING=true
 
-' >> $HOME/.config/dynamicdns
+# >> $HOME/.config/dynamicdns
+' >> /config/user-data/scripts/.config/dynamicdns
 
 return 0
 }
@@ -76,6 +83,7 @@ function logStatus {
 
 function saveConfiguration {
 	if [ -n "$1" ]; then
+#		sed -i "" -e "s/^KEY=.*$/KEY=$1/" $HOME/.config/dynamicdns
 		sed -i "" -e "s/^KEY=.*$/KEY=$1/" $HOME/.config/dynamicdns
 		if [ $VERBOSE = "true" ]; then
 			echo "Saving KEY to configuration file"
@@ -83,14 +91,14 @@ function saveConfiguration {
 	fi
 
 	if [ -n "$2" ]; then
-		sed -i "" -e "s/^RECORD=.*$/RECORD=$2/" $HOME/.config/dynamicdns
+		sed -i "" -e "s/^RECORD=.*$/RECORD=$2/" /config/user-data/scripts/.config/dynamicdns
 		if [ $VERBOSE = "true" ]; then
 			echo "Saving RECORD to configuration file"
 		fi
 
 	fi
 	if [ -n "$3" ]; then
-		sed -i "" -e "s/^LOGGING=.*$/LOGGING=$3/" $HOME/.config/dynamicdns
+		sed -i "" -e "s/^LOGGING=.*$/LOGGING=$3/" /config/user-data/scripts/.config/dynamicdns
 		if [ $VERBOSE = "true" ]; then
 			echo "Saving LOGGING to configuration file"
 		fi
@@ -160,20 +168,24 @@ done
 
 #Check for Configuration File
 
-if [ ! -f ~/.config/dynamicdns ]; then
+#if [ ! -f ~/.config/dynamicdns ]; then
+if [ ! -f /config/user-data/scripts/.config/dynamicdns ]; then
 	logStatus "notice" "Configuration File Not Found. Creating new configuration file."
 	createConfigurationFile
 fi
 
 # Load Configuration File
 
-source ~/.config/dynamicdns
+#source ~/.config/dynamicdns
+source /config/user-data/scripts/.config/dynamicdns
 
 # check for dependencies, if wget not available, test for curl, set variable to be used to test this later
-if command -v wget >/dev/null 2>&1; then
-	POSTPROCESS="wget"
+# EdgeOS doesn't have wget
+#if command -v wget >/dev/null 2>&1; then
+#	POSTPROCESS="wget"
 
-elif command -v curl >/dev/null 2>&1; then
+#elif command -v curl >/dev/null 2>&1; then
+if command -v curl >/dev/null 2>&1; then
 	POSTPROCESS="curl"
 
 else
@@ -226,7 +238,7 @@ if [ ! -n "$OPTIP" ]; then
 		echo "No IP Address provided, obtaining public IP"
 	fi
 #	IP=$(eval "dig +short myip.opendns.com @resolver1.opendns.com")
-#	Obtains the WAN IP
+#	Obtains the WAN IP from EdgeOS
 	IP=$(sudo ifconfig eth0 | grep "inet addr" | cut -d ':' -f 2 | cut -d ' ' -f 1)
 	if [ $? -ne 0 ]; then
 		logStatus "error" "Failed to obtain current IP address"
@@ -245,10 +257,11 @@ function submitApiRequest {
   local ARGS=$3
 
   # Send request
-	if [ $POSTPROCESS = "wget" ]; then
-  		local RESPONSE=$(wget -O- -q https://api.dreamhost.com/ \
-    		--post-data key=$KEY\&unique_id=$(uuidgen)\&cmd=$CMD\&$ARGS )
-	elif [ $POSTPROCESS = "curl" ]; then
+# EdgeOS doesn't use wget
+#	if [ $POSTPROCESS = "wget" ]; then
+# 		local RESPONSE=$(wget -O- -q https://api.dreamhost.com/ \
+#  		--post-data key=$KEY\&unique_id=$(uuidgen)\&cmd=$CMD\&$ARGS )
+	if [ $POSTPROCESS = "curl" ]; then
 		local RESPONSE=$(curl -s --data "key=$KEY&unique_id=$(uuidgen)&cmd=$CMD&$ARGS" https://api.dreamhost.com/)
 	else
 		logStatus "error" "Missing Dependency -- wget or curl"
