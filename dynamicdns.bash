@@ -225,7 +225,9 @@ if [ ! -n "$OPTIP" ]; then
 	if [ $VERBOSE = "true" ]; then
 		echo "No IP Address provided, obtaining public IP"
 	fi
-	IP=$(eval "dig +short myip.opendns.com @resolver1.opendns.com")
+#	IP=$(eval "dig +short myip.opendns.com @resolver1.opendns.com")
+#	Obtains the WAN IP
+	IP=$(sudo ifconfig eth0 | grep "inet addr" | cut -d ':' -f 2 | cut -d ' ' -f 1)
 	if [ $? -ne 0 ]; then
 		logStatus "error" "Failed to obtain current IP address"
 		exit 3
